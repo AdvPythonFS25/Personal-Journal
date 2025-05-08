@@ -1,20 +1,20 @@
 
-from pathlib import Path
+from pathlib import Path # ← for file paths
 
 # Set up directory and should handle security
 #middleware implementation
 #Should handle database and time
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent # point to root directory. Where everything is
 
 
 
-
+# Key needed to actually run django. Should be kept secret, apparently. Important for security
 SECRET_KEY = 'django-insecure-lt4e2tz7=*k+rb#znlx%po-qwm$d5+omh@u$ca!4$@vaxu08_@'
 
 
-DEBUG = True
+DEBUG = True # ← It'll show more information when it crashes
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [] # ← For lists of domain names. 
 
 
 
@@ -26,7 +26,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'taggit',
     'entries', 
+    'ckeditor',
 ]
 
 MIDDLEWARE = [
@@ -111,3 +113,6 @@ STATIC_URL = 'static/'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+

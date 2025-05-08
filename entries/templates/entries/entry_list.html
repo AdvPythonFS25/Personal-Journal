@@ -1,6 +1,16 @@
 {% extends "entries/base.html" %}
 
 {% block content %}
+  <form method="get" class="search-form">
+    {{ search_form.query.label_tag }} {{ search_form.query }}
+    {{ search_form.tags.label_tag }}  {{ search_form.tags }}
+    {{ search_form.date_from.label_tag }} {{ search_form.date_from }}
+    {{ search_form.date_to.label_tag }}   {{ search_form.date_to }}
+    <button type="submit">Search</button>
+    <a href="{% url 'entry-list' %}">Clear</a>
+  </form>
+  <hr>
+  
     {% for entry in entry_list %}
         <article>
             <h2 class="{{ entry.date_created|date:'l' }}">
