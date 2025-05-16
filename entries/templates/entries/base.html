@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<!-- Page type and language -->
+<head>
+    <meta charset="UTF-8">
+    <!-- for the characters used-->
+    <title>Journal Project</title>
+    <!-- Title of the browser tab -->
+    <link rel="stylesheet" href="{% static 'css/diary.css' %}">
+    <!-- Links to CSS file -->
+</head>
+
+<body>
+    <h1><a href="/">Journal Project</a></h1>
+     <!-- Title of the page -->
+
+    {% block content %}{% endblock content %}
+
+</body>
+
+</html>

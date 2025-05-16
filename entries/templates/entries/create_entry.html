@@ -1,0 +1,12 @@
+{% extends "entries/base.html" %}
+{% load static %}
+
+{% block content %}
+  <h2>Create a New Entry</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Entry</button>
+  </form>
+  <p><a href="{% url 'entry-list' %}">← Back to all entries</a></p>
+{% endblock content %}
