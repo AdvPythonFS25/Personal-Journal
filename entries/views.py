@@ -14,24 +14,31 @@ from taggit.models import Tag
 from .sentiment import get_sentiment
 
 import json
+import calendar
+from collections import OrderedDict
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
+
 
 @login_required
 def entry_delete(request, pk):
-    entry = get_object_or_404(Entry, pk=pk, user=request.user)  # Ensure user owns the entry
+    entry = get_object_or_404(Entry, pk=pk, user=request.user)
     if request.method == 'POST':
         entry.delete()
         messages.success(request, 'Entry deleted successfully.')
         return redirect('entry-list')
     return render(request, 'entries/entry_confirm_delete.html', {'entry': entry})
 
+
 def mood_chart_data():
-    entries = Entry.objects.annotate(date=TruncDate('date_created'))\
-                       .values('date')\
-                       .annotate(avg_sentiment=Avg('sentiment_score'))\
+    entries = Entry.objects.annotate(date=TruncDate('date_created')) \
+                       .values('date') \
+                       .annotate(avg_sentiment=Avg('sentiment_score')) \
                        .order_by('date')
     dates = [e['date'].strftime('%Y-%m-%d') for e in entries]
     sentiments = [e['avg_sentiment'] for e in entries]
     return dates, sentiments
+
 
 class EntryListView(ListView):
     model = Entry
@@ -66,6 +73,7 @@ class EntryListView(ListView):
         ctx['search_form'] = SearchForm(self.request.GET)
         return ctx
 
+
 def mood_chart(request):
     dates, sentiments = mood_chart_data()
     context = {
@@ -74,8 +82,10 @@ def mood_chart(request):
     }
     return render(request, 'entries/mood_chart.html', context)
 
+
 class EntryDetailView(DetailView):
     model = Entry
+
 
 class EntryCreateView(LoginRequiredMixin, CreateView):
     model = Entry
@@ -86,12 +96,14 @@ class EntryCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         entry = form.save(commit=False)
         entry.user = self.request.user
-        entry.sentiment_score = get_sentiment(entry.content)  # or entry.text depending on your model/form
+        entry.sentiment_score = get_sentiment(entry.content)
         entry.save()
         return super().form_valid(form)
 
+
 def entry_stats(request):
     try:
+        # Annotate counts per month
         qs = (
             Entry.objects
             .annotate(month=TruncMonth('date_created'))
@@ -100,9 +112,25 @@ def entry_stats(request):
             .order_by('month')
         )
 
-        labels = [item['month'].strftime("%Y-%m") for item in qs if item['month']]
-        counts = [item['count'] for item in qs]
+        # Prepare an ordered dict for the last 6 months
+        months = OrderedDict()
+        for i in range(5, -1, -1):
+            m = (timezone.now().date().replace(day=1)
+                 - relativedelta(months=i))
+            months[m] = 0
 
+        # Fill in actual counts
+        for item in qs:
+            m_date = item['month'].date() if item['month'] else None
+            if m_date:
+                month_key = m_date.replace(day=1)
+                if month_key in months:
+                    months[month_key] = item['count']
+
+        labels = [calendar.month_name[m.month] for m in months.keys()]
+        counts = list(months.values())
+
+        # Tag stats
         tag_qs = (
             Tag.objects
             .annotate(count=Count('taggit_taggeditem_items'))
@@ -122,6 +150,7 @@ def entry_stats(request):
         'tag_counts': tag_counts,
     })
 
+
 def signup_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -131,6 +160,7 @@ def signup_view(request):
     else:
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
+
 
 @login_required
 def create_entry_view(request):
@@ -146,4 +176,5 @@ def create_entry_view(request):
     else:
         form = EntryForm()
     return render(request, 'entries/create_entry.html', {'form': form})
+
 
