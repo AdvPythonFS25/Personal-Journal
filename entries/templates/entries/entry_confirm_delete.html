@@ -1,0 +1,14 @@
+{% extends "entries/base.html" %}
+
+{% block content %}
+  <div class="container mt-5">
+    <h2>Delete Entry</h2>
+    <p>Are you sure you want to delete the entry titled "<strong>{{ entry.title }}</strong>"?</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, delete</button>
+      <a href="{% url 'entry-detail' entry.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+{% endblock %}

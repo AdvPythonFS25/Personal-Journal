@@ -3,6 +3,7 @@
 {% block content %}
 <article>
     <h2>{{ entry.date_created|date:'Y-m-d H:i' }}</h2>
+    <a href="{% url 'entry-delete' entry.pk %}" class="btn btn-danger">Delete Entry</a>
     <h3>{{ entry.title }}</h3>
     <p>{{ entry.content }}</p>
 </article>

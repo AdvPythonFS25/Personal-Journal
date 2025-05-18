@@ -1,22 +1,117 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<!-- Page type and language -->
 <head>
-    <meta charset="UTF-8">
-    <!-- for the characters used-->
-    <title>Journal Project</title>
-    <!-- Title of the browser tab -->
-    <link rel="stylesheet" href="{% static 'css/diary.css' %}">
-    <!-- Links to CSS file -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Journal Project{% endblock %}</title>
+
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Your Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/diary.css' %}">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f9fafb;
+      color: #333;
+    }
+    .navbar-brand {
+      font-weight: 600;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+    }
+    .container {
+      margin-top: 2rem;
+    }
+    .fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: #0d6efd;
+      color: white;
+      font-size: 2rem;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      text-align: center;
+      line-height: 60px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+    }
+    .fab:hover {
+      background-color: #0b5ed7;
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
 </head>
 
 <body>
-    <h1><a href="/">Journal Project</a></h1>
-     <!-- Title of the page -->
 
-    {% block content %}{% endblock content %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'entry-list' %}">Journal Project</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'entry-list' %}">Entries</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'mood_chart' %}">Mood Chart</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'entry-stats' %}">Stats</a></li>
+        {% if user.is_authenticated %}
+          <li class="nav-item">
+            <!-- Logout as styled link -->
+            <a href="#" class="nav-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+              Logout
+            </a>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'signup' %}">Sign Up</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Hidden logout form -->
+{% if user.is_authenticated %}
+<form id="logout-form" method="post" action="{% url 'logout' %}" style="display: none;">
+  {% csrf_token %}
+</form>
+{% endif %}
+
+<div class="container">
+  {% block content %}
+  {% endblock %}
+</div>
+
+<!-- Floating Action Button (Create Entry) only for logged-in users -->
+{% if user.is_authenticated %}
+  <a href="{% url 'entry-create' %}" class="fab" title="New Entry">+</a>
+{% endif %}
+
+<!-- Bootstrap JS bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% block extra_scripts %}{% endblock %}
 
 </body>
-
 </html>
+
+
+
+
+
+
+
+

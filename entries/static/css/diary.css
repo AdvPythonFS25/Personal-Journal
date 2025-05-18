@@ -1,0 +1,40 @@
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 50%;
+  padding: 16px 20px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+}
+
+.fab:hover {
+  background-color: #388E3C;
+}
+.navbar-nav .nav-item form {
+  margin: 0;
+  padding: 0;
+  display: inline-block; /* use inline-block instead of inline for better control */
+  vertical-align: middle; /* align form vertically with sibling links */
+}
+
+.navbar-nav .nav-item form button.nav-link {
+  line-height: 1.5; /* keeps vertical spacing consistent */
+  vertical-align: middle;
+  padding: 0;
+  margin: 0;
+  font-size: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit; /* inherit text color like the links */
+  display: inline-block; /* make button inline-block to behave like links */
+}
+

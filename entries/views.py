@@ -1,17 +1,42 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
-from django.db.models import Q, Count
-from django.db.models.functions import TruncMonth
+from django.db.models import Q, Count, Avg
+from django.db.models.functions import TruncMonth, TruncDate
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 from .models import Entry
 from .forms import EntryForm, SearchForm
 from taggit.models import Tag
+from .sentiment import get_sentiment
+
+import json
+
+@login_required
+def entry_delete(request, pk):
+    entry = get_object_or_404(Entry, pk=pk, user=request.user)  # Ensure user owns the entry
+    if request.method == 'POST':
+        entry.delete()
+        messages.success(request, 'Entry deleted successfully.')
+        return redirect('entry-list')
+    return render(request, 'entries/entry_confirm_delete.html', {'entry': entry})
+
+def mood_chart_data():
+    entries = Entry.objects.annotate(date=TruncDate('date_created'))\
+                       .values('date')\
+                       .annotate(avg_sentiment=Avg('sentiment_score'))\
+                       .order_by('date')
+    dates = [e['date'].strftime('%Y-%m-%d') for e in entries]
+    sentiments = [e['avg_sentiment'] for e in entries]
+    return dates, sentiments
 
 class EntryListView(ListView):
     model = Entry
     template_name = 'entries/entry_list.html'
-    paginate_by = 10  # optional
+    paginate_by = 10
 
     def get_queryset(self):
         qs = super().get_queryset().order_by('-date_created')
@@ -19,20 +44,16 @@ class EntryListView(ListView):
         if form.is_valid():
             data = form.cleaned_data
 
-            # Keyword search in title or content
             if data['query']:
                 qs = qs.filter(
                     Q(title__icontains=data['query']) |
                     Q(content__icontains=data['query'])
                 )
-
-            # Tag filtering
             if data['tags']:
                 tag_list = [t.strip() for t in data['tags'].split(',') if t.strip()]
                 for tag in tag_list:
                     qs = qs.filter(tags__name__iexact=tag)
 
-            # Date range
             if data['date_from']:
                 qs = qs.filter(date_created__date__gte=data['date_from'])
             if data['date_to']:
@@ -45,14 +66,29 @@ class EntryListView(ListView):
         ctx['search_form'] = SearchForm(self.request.GET)
         return ctx
 
+def mood_chart(request):
+    dates, sentiments = mood_chart_data()
+    context = {
+        'dates': json.dumps(dates),
+        'sentiments': json.dumps(sentiments),
+    }
+    return render(request, 'entries/mood_chart.html', context)
+
 class EntryDetailView(DetailView):
     model = Entry
 
-class EntryCreateView(CreateView):
+class EntryCreateView(LoginRequiredMixin, CreateView):
     model = Entry
     form_class = EntryForm
     template_name = 'entries/create_entry.html'
     success_url = reverse_lazy('entry-list')
+
+    def form_valid(self, form):
+        entry = form.save(commit=False)
+        entry.user = self.request.user
+        entry.sentiment_score = get_sentiment(entry.content)  # or entry.text depending on your model/form
+        entry.save()
+        return super().form_valid(form)
 
 def entry_stats(request):
     try:
@@ -67,38 +103,47 @@ def entry_stats(request):
         labels = [item['month'].strftime("%Y-%m") for item in qs if item['month']]
         counts = [item['count'] for item in qs]
 
+        tag_qs = (
+            Tag.objects
+            .annotate(count=Count('taggit_taggeditem_items'))
+            .order_by('-count')
+        )
+        tag_labels = [tag.name for tag in tag_qs]
+        tag_counts = [tag.count for tag in tag_qs]
+
     except Exception as e:
-        # Fallback in case of failure
-        labels = []
-        counts = []
-        print(f"Error in entry_stats view: {e}")  # Good for debugging in dev
+        labels, counts, tag_labels, tag_counts = [], [], [], []
+        print(f"Error in entry_stats view: {e}")
 
     return render(request, 'entries/stats.html', {
         'labels': labels,
         'counts': counts,
+        'tag_labels': tag_labels,
+        'tag_counts': tag_counts,
     })
 
-    
-    
+def signup_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
 
-    # 2) Build lists for Chart.js
-    labels = [item['month'].strftime("%Y-%m") for item in qs]
-    counts = [item['count'] for item in qs]
-
-     # 3) Annotate each tag with the number of entries using it
-    tag_qs = (
-        Tag.objects
-        .annotate(count=Count('taggit_taggeditem_items'))
-        .order_by('-count')
-    )
-    tag_labels = [tag.name for tag in tag_qs]
-    tag_counts = [tag.count for tag in tag_qs]
-
-    # 4) Render the stats template with BOTH data sets
-    return render(request, 'entries/stats.html', {
-        'labels':      labels,
-        'counts':      counts,
-        'tag_labels':  tag_labels,
-        'tag_counts':  tag_counts,
-    })
+@login_required
+def create_entry_view(request):
+    if request.method == "POST":
+        form = EntryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.user = request.user
+            entry.sentiment_score = get_sentiment(entry.content)
+            entry.save()
+            messages.success(request, "Entry created successfully!")
+            return redirect('entry-list')
+    else:
+        form = EntryForm()
+    return render(request, 'entries/create_entry.html', {'form': form})
 
