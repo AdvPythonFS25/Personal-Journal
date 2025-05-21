@@ -10,17 +10,23 @@
     <a href="{% url 'entry-list' %}">Clear</a>
   </form>
   <hr>
-  
-    {% for entry in entry_list %}
-        <article>
-            <h2 class="{{ entry.date_created|date:'l' }}">
-                {{ entry.date_created|date:'Y-m-d H:i' }}
-            </h2>
-            <h3>
-                <a href="{% url 'entry-detail' entry.id %}">
-                    {{ entry.title }}
-                </a>
-            </h3>
-        </article>
-    {% endfor %}
+
+  {% for entry in entry_list %}
+    <article class="journal-card">
+      <header class="journal-card__header">
+        <time>{{ entry.date_created|date:"F j, Y H:i" }}</time>
+      </header>
+      <div class="journal-card__body">
+        <h3>
+          <a href="{% url 'entry-detail' entry.id %}">{{ entry.title }}</a>
+        </h3>
+        <p>
+          {{ entry.body_html|truncatewords:30|safe }}
+        </p>
+      </div>
+    </article>
+  {% empty %}
+    <p>No entries found.</p>
+  {% endfor %}
 {% endblock content %}
+
